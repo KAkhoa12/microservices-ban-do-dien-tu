@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Authentication Context</title>
+</head>
+<body>
+    <h1>Authentication Debug Page</h1>
+    
+    <h2>Context Variables:</h2>
+    <ul>
+        <li><strong>user_authenticated:</strong> {{ user_authenticated }}</li>
+        <li><strong>user_is_admin:</strong> {{ user_is_admin }}</li>
+        <li><strong>current_user:</strong> {{ current_user }}</li>
+        <li><strong>user_session:</strong> {{ user_session }}</li>
+    </ul>
+    
+    <h2>Cookies:</h2>
+    <ul>
+        <li><strong>access_token:</strong> {{ request.COOKIES.access_token|default:"Not found" }}</li>
+        <li><strong>refresh_token:</strong> {{ request.COOKIES.refresh_token|default:"Not found" }}</li>
+    </ul>
+    
+    <h2>Test Authentication:</h2>
+    {% if user_authenticated %}
+        <p style="color: green;">✓ User is authenticated</p>
+        <p>Welcome, {{ current_user.name|default:"Unknown User" }}!</p>
+        {% if user_is_admin %}
+            <p style="color: blue;">✓ User is admin</p>
+        {% else %}
+            <p style="color: orange;">User is not admin</p>
+        {% endif %}
+    {% else %}
+        <p style="color: red;">✗ User is not authenticated</p>
+    {% endif %}
+    
+    <h2>Actions:</h2>
+    <a href="{% url 'login' %}">Login</a> | 
+    <a href="{% url 'logout' %}">Logout</a> | 
+    <a href="{% url 'home' %}">Home</a>
+</body>
+</html>

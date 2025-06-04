@@ -1,0 +1,203 @@
+_format_version: "2.1"
+_transform: true
+
+services:
+  - name: user-service
+    url: http://user_service:8000
+    routes:
+      - name: user-login-register
+        paths:
+          - /api/user/login
+          - /api/user/register
+        strip_path: false  # Giữ nguyên strip_path: false
+        methods:
+          - POST
+
+      - name: user-protected-routes
+        paths:
+          - /api/user/me
+          - /api/user/update-info
+          - /api/user/update-avatar
+          - /api/user/validate
+        
+        strip_path: false
+        methods:
+          - GET
+          - PUT
+        
+      - name: user-private-routes
+        paths:
+          - /api/user/admin/list-user
+          - /api/user/admin/delete-user
+          - /api/user/admin/validate
+        strip_path: false
+        methods:
+          - GET
+          - DELETE
+
+      - name: user-static-files
+        paths:
+          - /static/user
+        strip_path: false
+        methods:
+          - GET
+  - name: business-service
+    url: http://business_service:8000
+    routes:
+      - name: brand-routes
+        paths:
+          - /api/brand/brands
+          - /api/brand/create-brand
+          - /api/brand/update-info
+          - /api/brand/update-avatar
+          - /api/brand/delete-brand
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+
+      - name: category-routes
+        paths:
+          - /api/category/categories
+          - /api/category/create-category
+          - /api/category/update-category
+          - /api/category/update-category-image
+          - /api/category/delete-category
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+
+      - name: product-routes
+        paths:
+          - /api/product/products
+          - /api/product/create-product
+          - /api/product/update-product
+          - /api/product/update-product-image
+          - /api/product/delete-product
+          - /api/product/update-product-stock
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+
+      - name: cart-routes
+        paths:
+          - /api/cart/get-cart
+          - /api/cart/add-to-cart
+          - /api/cart/update-cart-item
+          - /api/cart/remove-from-cart
+          - /api/cart/clear-cart
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+
+      - name: cong-trinh-routes
+        paths:
+          - /api/cong-trinh-toan-dien/list-cong-trinh
+          - /api/cong-trinh-toan-dien/create-cong-trinh
+          - /api/cong-trinh-toan-dien/update-cong-trinh
+          - /api/cong-trinh-toan-dien/update-cong-trinh-image
+          - /api/cong-trinh-toan-dien/delete-cong-trinh
+          - /api/cong-trinh-toan-dien/get-cong-trinh-id
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+
+      - name: giai-phap-routes
+        paths:
+          - /api/giai-phap-am-thanh/list-giai-phap
+          - /api/giai-phap-am-thanh/create-giai-phap
+          - /api/giai-phap-am-thanh/update-giai-phap
+          - /api/giai-phap-am-thanh/update-giai-phap-image
+          - /api/giai-phap-am-thanh/delete-giai-phap
+          - /api/giai-phap-am-thanh/get-giai-phap-id
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+
+      - name: order-routes
+        paths:
+          - /api/order/orders
+          - /api/order/get-order
+          - /api/order/create-order
+          - /api/order/create-order-from-cart
+          - /api/order/update-order
+          - /api/order/update-order-status
+          - /api/order/cancel-order
+          - /api/order/delete-order
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+
+      - name: business-static-files
+        paths:
+          - /static/business
+        strip_path: false
+        methods:
+          - GET
+
+      - name: business-uploads
+        paths:
+          - /uploads/business_service
+        strip_path: false
+        methods:
+          - GET
+
+    plugins:
+      - name: cors
+        config:
+          origins: ['*']
+          methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+          headers: ['Accept', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Content-Type', 'Date', 'Authorization']
+          exposed_headers: ['X-Auth-Token']
+          credentials: true
+          max_age: 3600
+
+  - name: payment-service
+    url: http://payment_service:8000
+    routes:
+      - name: payment-api-routes
+        paths:
+          - /api/payment
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+
+  - name: client-service
+    url: http://client:3000
+    routes:
+      - name: client-static-files
+        paths:
+          - /static/client
+        strip_path: false
+        methods:
+          - GET
+
+      - name: client-uploads
+        paths:
+          - /uploads/client
+        strip_path: false
+        methods:
+          - GET

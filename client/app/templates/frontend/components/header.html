@@ -1,0 +1,231 @@
+{% load static %}
+{% load custom_filters %}
+
+<!-- Auth styles -->
+<style>
+.user-info-container {
+    display: flex;
+    align-items: center;
+    color: white;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-dropdown {
+    min-width: 280px;
+    padding: 0;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.user-info-header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.user-details h6 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.user-details small {
+    opacity: 0.8;
+    font-size: 12px;
+}
+
+.user-role {
+    margin-top: 5px;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background-color: #dc3545;
+    color: white;
+}
+
+.user-role.admin {
+    background-color: #dc3545;
+}
+
+.user-role.user {
+    background-color: #007bff;
+}
+
+.user-dropdown .dropdown-item {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    color: #333;
+    transition: all 0.2s ease;
+}
+
+.user-dropdown .dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.user-dropdown .dropdown-item i {
+    width: 20px;
+    margin-right: 12px;
+    text-align: center;
+    color: #666;
+}
+
+.admin-link {
+    color: #dc3545 !important;
+}
+
+.admin-link:hover {
+    background-color: #fff5f5 !important;
+}
+
+.logout-btn {
+    color: #dc3545 !important;
+}
+
+.logout-btn:hover {
+    background-color: #fff5f5 !important;
+}
+</style>
+<header>
+    <!-- TOP HEADER -->
+    <div id="top-header">
+        <div class="container">
+            <ul class="header-links pull-left">
+                <li><a href="#"><i class="fa fa-phone"></i> +021-95-51-84</a></li>
+                <li><a href="#"><i class="fa fa-envelope-o"></i> email@email.com</a></li>
+                <li><a href="#"><i class="fa fa-map-marker"></i> 1734 Stonecoal Road</a></li>
+            </ul>
+            <ul class="header-links pull-right">
+                <li>
+                    {% if user_authenticated %}
+                    <div class="dropdown">
+                        <i class="fa fa-user-o"></i> 
+                        <di class="btn btn-secondary dropdown-toggle " style="color: white;" type="button" id="dropdownMenuButton"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{ current_user.full_name|default:"User" }}
+                        </di>
+                        <div class="dropdown-menu " aria-labelledby="dropdownMenuButton" style="padding: 5px 10px;">
+                            <div style="display: flex;flex-direction: column;">
+                                <a class="dropdown-item" style="color: red;" href="{% url 'profile' current_user.id %}">Thông tin</a>
+                                
+                                <a class="dropdown-item" style="color: red;" href="{% url 'logout' %}">Đăng xuất</a>
+                                {% if user_is_admin %}
+                                <a class="dropdown-item" style="color: red;" href="{% url 'dashboard' %}">Trang quản trị</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                        <a href="{% url 'login' %}">
+                            <i class="fa fa-user-o"></i> 
+                            Tài khoản</a>
+                    {% endif %}
+
+                </li>
+            </ul>
+        </div>
+    </div>
+    <!-- /TOP HEADER -->
+
+    <!-- MAIN HEADER -->
+    <div id="header">
+        <!-- container -->
+        <div class="container">
+            <!-- row -->
+            <div class="row">
+                <!-- LOGO -->
+                <div class="col-md-3">
+                    <div class="header-logo">
+                        <a href="/" class="logo">
+                            <img src="{%static '/img/logo.png'%}" alt=""
+                                style="height: 70px; width: 100px; object-fit: cover;">
+                        </a>
+                    </div>
+                </div>
+                <!-- /LOGO -->
+
+                {% include 'frontend/components/search.html' %}
+
+                <!-- ACCOUNT -->
+                <div class="col-md-3 clearfix">
+                    <div class="header-ctn">
+
+                        <!-- Cart -->
+                        <div class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown" aria-expanded="true">
+                                <i class="fa fa-shopping-cart"></i>
+                                <span>Giỏ hàng</span>
+                                {% if user_authenticated %}
+                                <div class="qty">{{ current_user.cart_quantity|default:0 }}</div>
+                                {% else %}
+                                <div class="qty">0</div>
+                                {% endif %}
+                            </a>
+                            <div class="cart-dropdown">
+                                {% if user_authenticated and current_user.cart_quantity|default:0 != 0 %}
+                                    <div class="cart-list">
+                                        {% for item in current_user.cart_details|default_if_none:'' %}
+                                        <div class="product-widget">
+                                            <div class="product-img">
+                                                <img src="{% static item.product_image %}" alt="">
+                                            </div>
+                                            <div class="product-body">
+                                                <h3 class="product-name"><a href="{% url 'product_detail' item.product_id %}">{{ item.product_name }}</a></h3>
+                                                <h4 class="product-price"><span class="qty">{{ item.quantity }}x</span>{{ item.product_price|currency_format }}</h4>
+                                            </div>
+                                            <a href="{% url 'remove_from_cart' item.product_id %}" class="delete"><i class="fa fa-close"></i></a>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="cart-summary">
+                                        <small>3 Item(s) selected</small>
+                                        <h5>SUBTOTAL: $2940.00</h5>
+                                    </div>
+                                    <div class="cart-btns" style="width: 100%;">
+                                        <a href="{% url 'cart' %}" style="width: 100%;">View Cart</a>
+                                    </div>
+                                {% else %}
+                                <div>
+                                    <h5>Không có sản phẩm nào được thêm vào</h5>
+                                </div>
+                                    <div class="cart-summary">
+                                        <small>0 Item(s) selected</small>
+                                        <h5>SUBTOTAL: 0 nvđ</h5>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- /Cart -->
+
+                        <!-- Menu Toogle -->
+                        <div class="menu-toggle">
+                            <a href="#">
+                                <i class="fa fa-bars"></i>
+                                <span>Menu</span>
+                            </a>
+                        </div>
+                        <!-- /Menu Toogle -->
+                    </div>
+                </div>
+                <!-- /ACCOUNT -->
+            </div>
+            <!-- row -->
+        </div>
+        <!-- container -->
+    </div>
+    <!-- /MAIN HEADER -->
+</header>

@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # Kong Gateway
+  kong:
+    build:
+      context: ./services/kong
+      dockerfile: Dockerfile
+    container_name: kong
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/etc/kong/kong.yml
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+      - KONG_ADMIN_GUI_LISTEN=0.0.0.0:8002
+    ports:
+      - "8000:8000"     
+      - "8001:8001"   
+      - "8002:8002"       # Kong Manager GUI port
+    depends_on:
+      - user_service
+      - business_service
+      - payment_service
+      - client
+
+  # User Service
+  user_service:
+    build:
+      context: ./services/user_service
+      dockerfile: Dockerfile
+    container_name: user_service
+    ports:
+      - "8003:8000"     # Expose for direct access if needed
+    volumes:
+      - ${PWD}/services/user_service/app/static:/app/app/static # Volume for uploaded files
+    environment:
+      - FLASK_ENV=production
+      - PYTHONPATH=/app
+
+  business_service:
+    build:
+      context: ./services/business_service
+      dockerfile: Dockerfile
+    container_name: business_service
+    ports:
+      - "8004:8000"
+    volumes:
+      - ${PWD}/services/business_service/app/static:/app/app/static # Volume for uploaded files
+    environment:
+      - FLASK_ENV=production
+      - PYTHONPATH=/app
+
+  # Payment Service
+  payment_service:
+    build:
+      context: ./services/payment_service
+      dockerfile: Dockerfile
+    container_name: payment_service
+    ports:
+      - "8005:8000"
+    volumes:
+      - ${PWD}/services/payment_service/app/static:/app/app/static
+    environment:
+      - BUSINESS_SERVICE_URL=http://business_service:8000
+      - MOMO_RETURN_URL=http://localhost:8000/api/payment/momo/result
+      - MOMO_NOTIFY_URL=http://localhost:8000/api/payment/momo/ipn
+
+  # Django Client
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: django_client
+    ports:
+      - "3000:3000"
+    environment:
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=config.settings
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:3000"
+    depends_on:
+      - user_service
+      - business_service
+      - payment_service
+
+networks:
+  default:
+    name: microservices_network
