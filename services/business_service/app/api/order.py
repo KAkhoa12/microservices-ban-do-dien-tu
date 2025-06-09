@@ -1,12 +1,18 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from db.database import get_db
 from crud.order import *
 from schemas.order import OrderCreate, OrderUpdate
 
 router = APIRouter()
+
+class CreateOrderFromCartRequest(BaseModel):
+    user_id: int
+    cart_data: dict
+    payment_id: int
 
 @router.get("/orders")
 def api_get_orders(
@@ -36,8 +42,13 @@ def api_create_order(order: OrderCreate, db: Session = Depends(get_db)):
     return create_order(order, db)
 
 @router.post("/create-order-from-cart")
-def api_create_order_from_cart(user_id: int, db: Session = Depends(get_db)):
-    """Create order from user's cart"""
+def api_create_order_from_cart(request: CreateOrderFromCartRequest, db: Session = Depends(get_db)):
+    """Create order from cart data (for payment service)"""
+    return create_order_from_cart_data(request.user_id, request.cart_data, request.payment_id, db)
+
+@router.post("/create-order-from-user-cart")
+def api_create_order_from_user_cart(user_id: int, db: Session = Depends(get_db)):
+    """Create order from user's active cart"""
     return create_order_from_cart(user_id, db)
 
 @router.put("/update-order")

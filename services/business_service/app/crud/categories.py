@@ -119,7 +119,7 @@ def update_category_image(category_id: int, image, db: Session):
         file_path = imgs_dir / file_name
         with open(file_path, "wb") as f:
             f.write(image.file.read())
-        category.image_url = f"static/imgs/categories/{file_name}"
+        category.image_url = f"static/business/imgs/categories/{file_name}"
         db.commit()
         db.refresh(category)
     return Response(

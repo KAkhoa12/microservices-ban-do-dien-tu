@@ -23,11 +23,22 @@
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="mb-0">Đơn hàng #{{ order.id }}</h5>
-                            <small class="text-muted">Ngày đặt: {{ order.created_at|date:"d/m/Y H:i" }}</small>
+                            <small class="text-muted">Ngày đặt:
+                                {% if order.created_at_formatted %}
+                                    {{ order.created_at_formatted }}
+                                {% else %}
+                                    {{ order.created_at|date:"d/m/Y H:i" }}
+                                {% endif %}
+                            </small>
+                            {% if order.total_items %}
+                            <br><small class="text-info">{{ order.total_items }} sản phẩm</small>
+                            {% endif %}
                         </div>
                         <div>
                             <span class="badge {% if order.status == 'pending' %}badge-warning{% elif order.status == 'completed' %}badge-success{% elif order.status == 'cancelled' %}badge-danger{% else %}badge-secondary{% endif %}">
-                                {% if order.status == 'pending' %}
+                                {% if order.status_display %}
+                                    {{ order.status_display }}
+                                {% elif order.status == 'pending' %}
                                     Đang xử lý
                                 {% elif order.status == 'completed' %}
                                     Đã hoàn thành
@@ -51,12 +62,12 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for detail in order.orderdetail_set.all %}
+                                    {% for detail in order.order_details %}
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 {% if detail.product.image_url %}
-                                                <img src="{% static detail.product.image_url %}" alt="{{ detail.product.name }}" class="img-thumbnail mr-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                                <img src="http://localhost:8000/{{ detail.product.image_url }}" alt="{{ detail.product.name }}" class="img-thumbnail mr-3" style="width: 50px; height: 50px; object-fit: cover;">
                                                 {% else %}
                                                 <img src="{% static 'images/default-product.png' %}" alt="Default" class="img-thumbnail mr-3" style="width: 50px; height: 50px; object-fit: cover;">
                                                 {% endif %}
@@ -72,6 +83,10 @@
                                         <td class="text-right">{{ detail.price|floatformat:0 }} đ</td>
                                         <td class="text-right">{{ detail.price|multiply:detail.quantity|floatformat:0 }} đ</td>
                                     </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Không có sản phẩm nào trong đơn hàng này</td>
+                                    </tr>
                                     {% endfor %}
                                 </tbody>
                                 <tfoot>
@@ -86,16 +101,17 @@
                     <div class="card-footer bg-light">
                         <div class="row">
                             <div class="col-md-6">
-                                <h6 class="mb-2">Thông tin thanh toán</h6>
-                                <p class="mb-1"><strong>Phương thức:</strong> 
-                                    {% if order.momo_payment %}
-                                        MoMo
+                                <h6 class="mb-2">Thông tin đơn hàng</h6>
+                                <p class="mb-1"><strong>Tổng tiền:</strong> {{ order.total_price|floatformat:0 }} đ</p>
+                                <p class="mb-1"><strong>Trạng thái:</strong>
+                                    {% if order.status_display %}
+                                        {{ order.status_display }}
                                     {% else %}
-                                        Thanh toán khi nhận hàng
+                                        {{ order.status }}
                                     {% endif %}
                                 </p>
-                                {% if order.momo_payment %}
-                                <p class="mb-1"><strong>Mã giao dịch:</strong> {{ order.momo_payment.transaction_id }}</p>
+                                {% if order.total_items %}
+                                <p class="mb-1"><strong>Số lượng sản phẩm:</strong> {{ order.total_items }}</p>
                                 {% endif %}
                             </div>
                             <div class="col-md-6 text-md-right">
@@ -104,6 +120,9 @@
                                     Hủy đơn hàng
                                 </button>
                                 {% endif %}
+                                <a href="{% url 'order_detail' order.id %}" class="btn btn-primary btn-sm">
+                                    Xem chi tiết
+                                </a>
                             </div>
                         </div>
                     </div>

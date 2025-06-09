@@ -16,7 +16,7 @@
 			<div class="col-md-4 col-xs-6">
 				<div class="shop">
 					<div class="shop-img" style="background-color: white;">
-						<img src="{% static category.image_url %}" alt=""
+						<img src="http://localhost:8000/{{ category.image_url }}" alt=""
 							style="height: 200px; object-fit: contain;object-position: right;">
 					</div>
 					<div class="shop-body">
@@ -59,7 +59,7 @@
 									<div class="product">
 										<div class="product-img">
 											<a href="{% url 'brand_products' 1 1 %}">
-												<img src="{% static brand.image_url %}" alt="" style="object-fit: contain; height: 100px;object-position: center;">
+												<img src="http://localhost:8000/{{ brand.image_url }}" alt="" style="object-fit: contain; height: 100px;object-position: center;">
 											</a>
 										</div>
 									</div>

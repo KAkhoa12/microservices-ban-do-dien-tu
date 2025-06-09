@@ -116,7 +116,7 @@ def update_giai_phap_image(giai_phap_id: int, image, db: Session):
         file_path = imgs_dir / file_name
         with open(file_path, "wb") as f:
             f.write(image.file.read())
-        giai_phap.image_url = f"static/imgs/giai_phap/{file_name}"
+        giai_phap.image_url = f"static/business/imgs/giai_phap/{file_name}"
         db.commit()
         db.refresh(giai_phap)
     return Response(

@@ -23,15 +23,73 @@
             {% endif %}
             
             {% if order %}
+                <!-- Order Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary">{{ order.total_items|default:0 }}</h5>
+                                <p class="card-text">Sản phẩm</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title text-success">{{ order.total_price|floatformat:0 }} đ</h5>
+                                <p class="card-text">Tổng tiền</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <span class="badge {% if order.status == 'pending' %}badge-warning{% elif order.status == 'completed' %}badge-success{% elif order.status == 'cancelled' %}badge-danger{% else %}badge-secondary{% endif %}">
+                                        {% if order.status_display %}{{ order.status_display }}{% else %}{{ order.status }}{% endif %}
+                                    </span>
+                                </h5>
+                                <p class="card-text">Trạng thái</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title text-info">
+                                    {% if order.created_at_formatted %}
+                                        {{ order.created_at_formatted }}
+                                    {% else %}
+                                        {{ order.created_at|date:"d/m/Y" }}
+                                    {% endif %}
+                                </h5>
+                                <p class="card-text">Ngày đặt</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Details -->
                 <div class="card shadow-sm" style="border: 1px solid #000; margin: 10px; padding:10px;border-radius: 10px;">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="mb-0">Đơn hàng #{{ order.id }}</h5>
-                            <small class="text-muted">Ngày đặt: {{ order.created_at|date:"d/m/Y H:i" }}</small>
+                            <small class="text-muted">Ngày đặt:
+                                {% if order.created_at_formatted %}
+                                    {{ order.created_at_formatted }}
+                                {% else %}
+                                    {{ order.created_at|date:"d/m/Y H:i" }}
+                                {% endif %}
+                            </small>
+                            {% if order.total_items %}
+                            <br><small class="text-info">{{ order.total_items }} sản phẩm</small>
+                            {% endif %}
                         </div>
                         <div>
                             <span class="badge {% if order.status == 'pending' %}badge-warning{% elif order.status == 'completed' %}badge-success{% elif order.status == 'cancelled' %}badge-danger{% else %}badge-secondary{% endif %}">
-                                {% if order.status == 'pending' %}
+                                {% if order.status_display %}
+                                    {{ order.status_display }}
+                                {% elif order.status == 'pending' %}
                                     Đang xử lý
                                 {% elif order.status == 'completed' %}
                                     Đã hoàn thành
@@ -55,26 +113,42 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for detail in order.orderdetail_set.all %}
+                                    {% for detail in order.order_details %}
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 {% if detail.product.image_url %}
-                                                <img src="{% static detail.product.image_url %}" alt="{{ detail.product.name }}" class="img-thumbnail mr-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                                <img src="http://localhost:8000/{{ detail.product.image_url }}" alt="{{ detail.product.name }}" class="img-thumbnail mr-3" style="width: 80px; height: 80px; object-fit: cover;">
                                                 {% else %}
-                                                <img src="{% static 'images/default-product.png' %}" alt="Default" class="img-thumbnail mr-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                                <img src="{% static 'images/default-product.png' %}" alt="Default" class="img-thumbnail mr-3" style="width: 80px; height: 80px; object-fit: cover;">
                                                 {% endif %}
                                                 <div>
                                                     <h6 class="mb-0">{{ detail.product.name }}</h6>
+                                                    {% if detail.product.description %}
+                                                    <small class="text-muted">{{ detail.product.description|truncatechars:50 }}</small>
+                                                    {% endif %}
                                                     {% if detail.product_options %}
-                                                    <small class="text-muted">{{ detail.product_options }}</small>
+                                                    <br><small class="text-info">{{ detail.product_options }}</small>
                                                     {% endif %}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="text-center">{{ detail.quantity }}</td>
-                                        <td class="text-right">{{ detail.price|floatformat:0 }} đ</td>
-                                        <td class="text-right">{{ detail.price|multiply:detail.quantity|floatformat:0 }} đ</td>
+                                        <td class="text-center">
+                                            <span class="badge badge-primary">{{ detail.quantity }}</span>
+                                        </td>
+                                        <td class="text-right">
+                                            <strong>{{ detail.price|floatformat:0 }} đ</strong>
+                                            {% if detail.product.old_price and detail.product.old_price != detail.price %}
+                                            <br><small class="text-muted"><del>{{ detail.product.old_price|floatformat:0 }} đ</del></small>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-right">
+                                            <strong class="text-success">{{ detail.price|multiply:detail.quantity|floatformat:0 }} đ</strong>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Không có sản phẩm nào trong đơn hàng này</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -89,25 +163,50 @@
                     </div>
                     <div class="card-footer bg-light">
                         <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="mb-2">Thông tin thanh toán</h6>
-                                <p class="mb-1"><strong>Phương thức:</strong> 
-                                    {% if order.momo_payment %}
-                                        MoMo
-                                    {% else %}
-                                        Thanh toán khi nhận hàng
-                                    {% endif %}
-                                </p>
-                                {% if order.momo_payment %}
-                                <p class="mb-1"><strong>Mã giao dịch:</strong> {{ order.momo_payment.transaction_id }}</p>
-                                {% endif %}
+                            <div class="col-md-8">
+                                <h6 class="mb-3">Thông tin đơn hàng</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="mb-2"><strong>Mã đơn hàng:</strong> #{{ order.id }}</p>
+                                        <p class="mb-2"><strong>Ngày đặt:</strong>
+                                            {% if order.created_at_formatted %}
+                                                {{ order.created_at_formatted }}
+                                            {% else %}
+                                                {{ order.created_at|date:"d/m/Y H:i" }}
+                                            {% endif %}
+                                        </p>
+                                        <p class="mb-2"><strong>Trạng thái:</strong>
+                                            <span class="badge {% if order.status == 'pending' %}badge-warning{% elif order.status == 'completed' %}badge-success{% elif order.status == 'cancelled' %}badge-danger{% else %}badge-secondary{% endif %}">
+                                                {% if order.status_display %}
+                                                    {{ order.status_display }}
+                                                {% else %}
+                                                    {{ order.status }}
+                                                {% endif %}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        {% if order.total_items %}
+                                        <p class="mb-2"><strong>Số lượng sản phẩm:</strong> {{ order.total_items }}</p>
+                                        {% endif %}
+                                        <p class="mb-2"><strong>Tổng tiền:</strong>
+                                            <span class="text-success font-weight-bold">{{ order.total_price|floatformat:0 }} đ</span>
+                                        </p>
+                                        <p class="mb-2"><strong>Phương thức thanh toán:</strong> MoMo</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 text-md-right">
-                                {% if order.status == 'pending' %}
-                                <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#cancelModal">
-                                    Hủy đơn hàng
-                                </button>
-                                {% endif %}
+                            <div class="col-md-4 text-md-right">
+                                <div class="d-flex flex-column">
+                                    {% if order.status == 'pending' %}
+                                    <button type="button" class="btn btn-danger btn-sm mb-2" data-toggle="modal" data-target="#cancelModal">
+                                        <i class="fa fa-times mr-1"></i>Hủy đơn hàng
+                                    </button>
+                                    {% endif %}
+                                    <a href="{% url 'order_history' %}" class="btn btn-secondary btn-sm">
+                                        <i class="fa fa-list mr-1"></i>Tất cả đơn hàng
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>

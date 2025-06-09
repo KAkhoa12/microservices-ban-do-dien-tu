@@ -43,7 +43,7 @@
                             <td>{{ cong_trinh.id }}</td>
                             <td>
                                 {% if cong_trinh.image_url %}
-                                <img src="{{ cong_trinh.image_url }}" alt="{{ cong_trinh.title }}" style="max-width: 100px;">
+                                <img src="http://localhost:8000/{{ cong_trinh.image_url }}" alt="{{ cong_trinh.title }}" style="max-width: 100px;">
                                 {% else %}
                                 <img src="{% static 'backend/assets/img/default-project.jpg' %}" alt="{{ cong_trinh.title }}" style="max-width: 100px;">
                                 {% endif %}

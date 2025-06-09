@@ -48,9 +48,22 @@ def get_payment_by_id(payment_id: int):
     Lấy thông tin thanh toán theo ID
     """
     url = f"{API_URL}/api/payment/{payment_id}"
-    
+
     try:
         response = requests.get(url)
+        return handle_response(response)
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Error getting payment: {str(e)}'
+        }
+
+def get_payment_by_order_id(order_id: str):
+    """Get payment record by order_id"""
+    url = f"{API_URL}/api/payment/get-by-order-id"
+    params = {"order_id": order_id}
+    try:
+        response = requests.get(url, params=params)
         return handle_response(response)
     except Exception as e:
         return {

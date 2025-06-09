@@ -25,10 +25,6 @@ app.add_middleware(
 app.mount("/static/business", StaticFiles(directory="static"), name="static")
 
 # Mount uploads directory để serve uploaded files
-uploads_dir = Path("static/uploads")
-uploads_dir.mkdir(exist_ok=True)
-app.mount("/uploads/business_service", StaticFiles(directory="static/uploads"), name="uploads")
-
 app.include_router(
     brand.router, 
     prefix="/api/brand", 

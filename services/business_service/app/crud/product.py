@@ -117,7 +117,7 @@ def update_product_image(product_id: int, image, db: Session):
         file_path = imgs_dir / file_name
         with open(file_path, "wb") as f:
             f.write(image.file.read())
-        product.image_url = f"static/imgs/products/{file_name}"
+        product.image_url = f"static/business/imgs/products/{file_name}"
         db.commit()
         db.refresh(product)
     return Response(

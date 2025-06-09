@@ -1,0 +1,125 @@
+{% extends 'frontend/components/layout.html' %}
+{% load static %}
+
+{% block title %} 
+    {{ title }}
+{% endblock %}
+
+{% block content %}
+<!-- SECTION -->
+<div class="section">
+    <!-- container -->
+    <div class="container">
+        <!-- row -->
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2">
+                <div class="payment-result failed">
+                    <div class="text-center">
+                        <i class="fa fa-times-circle" style="font-size: 80px; color: #dc3545; margin-bottom: 20px;"></i>
+                        <h2 style="color: #dc3545; margin-bottom: 20px;">Thanh toán thất bại!</h2>
+                        <p style="font-size: 18px; margin-bottom: 30px;">
+                            {% if error %}
+                                {{ error }}
+                            {% else %}
+                                {{ message|default:"Thanh toán của bạn không thành công. Vui lòng thử lại." }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    {% if payment_data %}
+                    <div class="payment-details">
+                        <h4>Thông tin giao dịch:</h4>
+                        <div class="row">
+                            {% if order_id %}
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <strong>Mã đơn hàng:</strong>
+                                    <span>{{ order_id }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if amount %}
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <strong>Số tiền:</strong>
+                                    <span>{{ amount }} VND</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if payment_data.resultCode %}
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="detail-item">
+                                    <strong>Mã lỗi:</strong>
+                                    <span>{{ payment_data.resultCode }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-center" style="margin-top: 30px;">
+                        <a href="{% url 'cart' %}" class="primary-btn">Thử lại</a>
+                        <a href="{% url 'home' %}" class="primary-btn" style="margin-left: 10px;">Về trang chủ</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /row -->
+    </div>
+    <!-- /container -->
+</div>
+<!-- /SECTION -->
+
+<style>
+.payment-result {
+    background: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    margin: 40px 0;
+}
+
+.payment-result.failed {
+    border-top: 5px solid #dc3545;
+}
+
+.detail-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.detail-item strong {
+    display: block;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.detail-item span {
+    color: #666;
+    font-size: 16px;
+}
+
+.primary-btn {
+    background: #D10024;
+    color: #fff;
+    padding: 12px 25px;
+    text-decoration: none;
+    border-radius: 5px;
+    display: inline-block;
+    margin: 5px;
+    transition: background 0.3s;
+}
+
+.primary-btn:hover {
+    background: #b8001f;
+    color: #fff;
+    text-decoration: none;
+}
+</style>
+{% endblock %}

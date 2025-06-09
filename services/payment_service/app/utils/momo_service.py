@@ -4,9 +4,10 @@ import hmac
 import requests
 from datetime import datetime
 from typing import Dict, Any
-from ..core.config import settings
-from ..db.models import MomoPayment
+from core.momo_config import CONFIG as settings
+from db.models import MomoPayment
 from sqlalchemy.orm import Session
+from core.response import Response, CodeEnum
 
 
 def create_momo_payment(db: Session, amount: int, order_info: str, user_id: int, cart_data: str = None) -> Dict[str, Any]:
@@ -30,22 +31,22 @@ def create_momo_payment(db: Session, amount: int, order_info: str, user_id: int,
     db.commit()
     db.refresh(payment)
     
-    # Chuẩn bị dữ liệu gửi đến MoMo
+    # Chuẩn bị dữ liệu gửi đến MoMo theo API v2.0 (thêm tham số cho test)
     raw_data = {
-        'partnerCode': settings.MOMO_PARTNER_CODE,
-        'accessKey': settings.MOMO_ACCESS_KEY,
+        'partnerCode': settings['partner_code'],
+        'accessKey': settings['access_key'],
         'requestId': request_id,
         'amount': str(amount),
         'orderId': order_id,
         'orderInfo': order_info,
-        'returnUrl': settings.MOMO_RETURN_URL,
-        'ipnUrl': settings.MOMO_NOTIFY_URL,
-        'redirectUrl': settings.MOMO_RETURN_URL,
-        'requestType': 'payWithMethod',
+        'redirectUrl': settings['return_url'],  # Sử dụng return_url từ config
+        'ipnUrl': settings['notify_url'],
         'extraData': '',
+        'requestType': 'payWithMethod',  # Thay đổi từ payWithMethod sang captureWallet để hỗ trợ returnUrl
+        'returnUrl': settings['return_url']  # Sử dụng return_url từ config
     }
     
-    # Tạo chuỗi raw data để ký
+    # Tạo chuỗi raw data để ký theo đúng thứ tự mà MoMo mong đợi (KHÔNG bao gồm returnUrl)
     raw_signature = (
         f"accessKey={raw_data['accessKey']}"
         f"&amount={raw_data['amount']}"
@@ -61,7 +62,7 @@ def create_momo_payment(db: Session, amount: int, order_info: str, user_id: int,
     
     # Tạo chữ ký HMAC SHA256
     signature = hmac.new(
-        settings.MOMO_SECRET_KEY.encode('utf-8'),
+        settings['secret_key'].encode('utf-8'),
         raw_signature.encode('utf-8'),
         hashlib.sha256
     ).hexdigest()
@@ -75,7 +76,7 @@ def create_momo_payment(db: Session, amount: int, order_info: str, user_id: int,
     
     try:
         # Gửi yêu cầu đến MoMo
-        response = requests.post(settings.MOMO_TEST_ENDPOINT, json=raw_data)
+        response = requests.post(settings['test_endpoint'], json=raw_data)
         
         # In ra response để kiểm tra
         print("Response từ MoMo:", response.status_code)
@@ -88,27 +89,22 @@ def create_momo_payment(db: Session, amount: int, order_info: str, user_id: int,
                 # Thành công
                 return {
                     'status': 'success',
-                    'payment_url': response_data.get('payUrl'),
-                    'order_id': order_id,
-                    'request_id': request_id
+                    'code': 200,
+                    'message': 'Thanh toán thành công',
+                    'data': {
+                        'payment_url': response_data.get('payUrl'),
+                        'order_id': order_id,
+                        'request_id': request_id
+                    }
                 }
             else:
                 # Lỗi từ MoMo
-                return {
-                    'status': 'error',
-                    'message': response_data.get('message', 'Có lỗi xảy ra từ MoMo')
-                }
+                return {'status': 'error', 'code': 400, 'message': response_data.get('message', 'Có lỗi xảy ra từ MoMo'), 'data': None}
         else:
-            return {
-                'status': 'error',
-                'message': 'Không thể kết nối đến MoMo'
-            }
+            return {'status': 'error', 'code': 500, 'message': 'Không thể kết nối đến MoMo', 'data': None}
     except Exception as e:
         print(f"Lỗi khi gửi request đến MoMo: {str(e)}")
-        return {
-            'status': 'error',
-            'message': f'Lỗi kết nối: {str(e)}'
-        }
+        return {'status': 'error', 'code': 500, 'message': f'Lỗi kết nối: {str(e)}', 'data': None}
 
 
 def verify_momo_response(db: Session, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -144,7 +140,7 @@ def verify_momo_response(db: Session, data: Dict[str, Any]) -> Dict[str, Any]:
 
     # Tạo chuỗi raw signature theo đúng thứ tự MoMo yêu cầu
     raw_signature = (
-        f"accessKey={settings.MOMO_ACCESS_KEY}"
+        f"accessKey={settings['access_key']}"
         f"&amount={amount}"
         f"&extraData={extra_data}"
         f"&message={message}"
@@ -161,7 +157,7 @@ def verify_momo_response(db: Session, data: Dict[str, Any]) -> Dict[str, Any]:
 
     # Tạo chữ ký xác thực
     verify_signature = hmac.new(
-        settings.MOMO_SECRET_KEY.encode('utf-8'),
+        settings['secret_key'].encode('utf-8'),
         raw_signature.encode('utf-8'),
         hashlib.sha256
     ).hexdigest()

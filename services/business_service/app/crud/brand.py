@@ -92,7 +92,7 @@ def update_brand_avatar(brand_id, image, db: Session):
         file_path = imgs_dir / file_name
         with open(file_path, "wb") as f:
             f.write(image.file.read())
-        brand.image = f"static/imgs/brands/{file_name}"
+        brand.image = f"static/business/imgs/brands/{file_name}"
         db.commit()
         db.refresh(brand)
     return Response(status=StatusEnum.SUCCESS, code=CodeEnum.SUCCESS, message="brand updated successfully", data=brand)

@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .services.cart_service import get_cart, add_to_cart, update_cart_item, remove_from_cart, clear_cart
+from .services.cart_service import get_cart, add_to_cart, update_cart_item, remove_from_cart, clear_cart, get_cart_by_user_id
 from .services.order_service import (
     get_orders, get_order, create_order, create_order_from_cart,
     update_order_status, cancel_order, update_order, delete_order
@@ -731,47 +731,113 @@ def test_auth_page(request):
 
 # Order views
 def orders_page(request):
-    """Display user's orders"""
+    """Display user's orders with detailed product information"""
     if not is_user_authenticated(request):
         return redirect('login')
 
     try:
         user_data = get_user_from_cookies(request)
         categories = get_all_categories()
-        orders = get_orders(user_id=user_data['id'])
+        orders_response = get_orders(user_id=user_data['id'])
+
+        # Process orders data to include detailed information
+        orders_data = safe_get_data(orders_response)
+        orders_list = orders_data.get('items', []) if orders_data else []
+
+        # Add some processing for better display
+        for order in orders_list:
+            # Calculate total items in order
+            order['total_items'] = sum(detail.get('quantity', 0) for detail in order.get('order_details', []))
+
+            # Format created_at for display
+            if order.get('created_at'):
+                from datetime import datetime
+                try:
+                    created_at = datetime.fromisoformat(order['created_at'].replace('Z', '+00:00'))
+                    order['created_at_formatted'] = created_at.strftime('%d/%m/%Y %H:%M')
+                except:
+                    order['created_at_formatted'] = order['created_at']
+
+            # Add status display text
+            status_map = {
+                'pending': 'Đang xử lý',
+                'confirmed': 'Đã xác nhận',
+                'shipping': 'Đang giao hàng',
+                'completed': 'Hoàn thành',
+                'cancelled': 'Đã hủy'
+            }
+            order['status_display'] = status_map.get(order.get('status', ''), order.get('status', ''))
 
         return render(request, 'frontend/pages/order_history.html', {
             'title': 'Đơn hàng của tôi',
             'categories': safe_get_payload(categories),
-            'orders': safe_get_payload(orders),
+            'orders': orders_list,
+            'orders_pagination': {
+                'total': orders_data.get('total', 0),
+                'current_page': 1,
+                'total_pages': 1
+            } if orders_data else {},
             'user': user_data or {}
         })
     except Exception as e:
+        print(f"Error in orders_page: {str(e)}")
+        import traceback
+        traceback.print_exc()
         messages.error(request, f"Error loading orders: {str(e)}")
         return render(request, 'frontend/pages/order_history.html', {
             'title': 'Đơn hàng của tôi',
             'categories': [],
             'orders': [],
+            'orders_pagination': {},
             'user': {}
         })
 
 def order_detail_page(request, order_id):
-    """Display order detail"""
+    """Display order detail with full product information"""
     if not is_user_authenticated(request):
         return redirect('login')
 
     try:
         user_data = get_user_from_cookies(request)
         categories = get_all_categories()
-        order = get_order(order_id)
+        order_response = get_order(order_id)
+
+        # Process order data
+        order_data = safe_get_data(order_response)
+
+        if order_data:
+            # Calculate total items in order
+            order_data['total_items'] = sum(detail.get('quantity', 0) for detail in order_data.get('order_details', []))
+
+            # Format created_at for display
+            if order_data.get('created_at'):
+                from datetime import datetime
+                try:
+                    created_at = datetime.fromisoformat(order_data['created_at'].replace('Z', '+00:00'))
+                    order_data['created_at_formatted'] = created_at.strftime('%d/%m/%Y %H:%M')
+                except:
+                    order_data['created_at_formatted'] = order_data['created_at']
+
+            # Add status display text
+            status_map = {
+                'pending': 'Đang xử lý',
+                'confirmed': 'Đã xác nhận',
+                'shipping': 'Đang giao hàng',
+                'completed': 'Hoàn thành',
+                'cancelled': 'Đã hủy'
+            }
+            order_data['status_display'] = status_map.get(order_data.get('status', ''), order_data.get('status', ''))
 
         return render(request, 'frontend/pages/order_detail.html', {
-            'title': 'Chi tiết đơn hàng',
+            'title': f'Chi tiết đơn hàng #{order_id}',
             'categories': safe_get_payload(categories),
-            'order': safe_get_data(order),
+            'order': order_data or {},
             'user': user_data or {}
         })
     except Exception as e:
+        print(f"Error in order_detail_page: {str(e)}")
+        import traceback
+        traceback.print_exc()
         messages.error(request, f"Error loading order: {str(e)}")
         return render(request, 'frontend/pages/order_detail.html', {
             'title': 'Chi tiết đơn hàng',
@@ -863,7 +929,7 @@ def create_payment_view(request):
                 return redirect('cart')
 
             # Validate user info
-            required_fields = ['name', 'email', 'phone', 'address']
+            required_fields = ['full_name', 'email', 'phone_number', 'address']
             missing_fields = []
 
             for field in required_fields:
@@ -880,6 +946,9 @@ def create_payment_view(request):
 
             # Validate amount
             try:
+                # Handle both comma and dot as decimal separator
+                if isinstance(amount, str):
+                    amount = amount.replace(',', '.')
                 amount = int(float(amount))
             except (ValueError, TypeError):
                 messages.error(request, "Số tiền không hợp lệ")
@@ -892,10 +961,11 @@ def create_payment_view(request):
                 user_id=user_id,
                 cart_data=cart_data
             )
-
+            print("Create payment result:", result)
             if result.get('status') == 'success':
                 # Redirect to MoMo payment page
-                payment_url = result.get('payment_url')
+                data = result.get('data', {})
+                payment_url = data.get('payment_url')
                 if payment_url:
                     return redirect(payment_url)
                 else:
@@ -911,6 +981,146 @@ def create_payment_view(request):
             return redirect('cart')
 
     return redirect('cart')
+
+
+def payment_result_view(request):
+    """
+    Xử lý kết quả thanh toán từ MoMo
+    """
+    try:
+        # Lấy tất cả parameters từ URL
+        payment_data = dict(request.GET)
+        
+        print("Payment result data:",payment_data)
+
+        # Flatten single-item lists (MoMo sends single values)
+        for key, value in payment_data.items():
+            if isinstance(value, list) and len(value) == 1:
+                payment_data[key] = value[0]
+
+        # Kiểm tra kết quả thanh toán
+        result_code = payment_data.get('resultCode', '')
+
+        if result_code == '0':
+            # Thanh toán thành công - tạo order
+            print("Payment successful, creating order")
+
+            try:
+                # Lấy user_id từ order_id (trong MoMo payment, order_id chứa thông tin user)
+                order_id = payment_data.get('orderId', '')
+                print(f"Order ID from MoMo: {order_id}")
+                # Tìm payment record từ order_id để lấy user_id
+                from .services.payment_service import get_payment_by_order_id
+                payment_record = get_payment_by_order_id(order_id)
+
+                if payment_record and payment_record.get('status') == 'success':
+                    user_id = payment_record.get('data', {}).get('user_id')
+                    print(f"Found user_id from payment record: {user_id}")
+                else:
+                    user_data = get_user_from_cookies(request)
+                    user_id = user_data['id']
+
+                if not user_id:
+                    print("No user_id found")
+                    return render(request, 'frontend/pages/payment_failed.html', {
+                        'title': 'Lỗi xác thực',
+                        'payment_data': payment_data,
+                        'message': 'Không tìm thấy thông tin người dùng'
+                    })
+
+                # Lấy thông tin cart hiện tại
+                from .services.cart_service import get_cart_by_user_id
+                cart_response = get_cart_by_user_id(user_id)
+                print("Cart response:", cart_response)
+
+                if cart_response.get('status') == 'success':
+                    cart_data = cart_response.get('data', {})
+                    cart_details = cart_data.get('cart', {}).get('cart_details', [])
+                    print(f"Cart details found: {len(cart_details)} items")
+                    print("Cart details:",cart_details)
+
+                    if cart_details:
+                        # Tạo order từ cart data
+                        from .services.order_service import create_order_from_cart_data
+
+                        order_result = create_order_from_cart_data(user_id, cart_data)
+                        print("Order creation result:", order_result)
+
+                        if order_result.get('status') == 'success':
+                            # Cập nhật cart status thành completed
+                            from .services.cart_service import update_cart_status
+                            cart_id = cart_data.get('cart', {}).get('id')
+                            print(f"Updating cart status for cart_id: {cart_id}")
+                            if cart_id:
+                                update_result = update_cart_status(cart_id, 'completed')
+                                print(f"Cart status update result: {update_result}")
+
+                            # Thanh toán và tạo order thành công
+                            return render(request, 'frontend/pages/payment_success.html', {
+                                'title': 'Thanh toán thành công',
+                                'payment_data': payment_data,
+                                'order_id': payment_data.get('orderId'),
+                                'amount': payment_data.get('amount'),
+                                'message': payment_data.get('message', 'Thanh toán thành công'),
+                                'order_info': order_result.get('data', {})
+                            })
+                        else:
+                            print("Order creation failed:", order_result.get('message'))
+                            return render(request, 'frontend/pages/payment_success.html', {
+                                'title': 'Thanh toán thành công',
+                                'payment_data': payment_data,
+                                'order_id': payment_data.get('orderId'),
+                                'amount': payment_data.get('amount'),
+                                'message': f'Thanh toán thành công. Lỗi tạo đơn hàng: {order_result.get("message", "")}'
+                            })
+                    else:
+                        print("Cart is empty")
+                        return render(request, 'frontend/pages/payment_success.html', {
+                            'title': 'Thanh toán thành công',
+                            'payment_data': payment_data,
+                            'order_id': payment_data.get('orderId'),
+                            'amount': payment_data.get('amount'),
+                            'message': 'Thanh toán thành công nhưng giỏ hàng trống'
+                        })
+                else:
+                    print("Failed to get cart:", cart_response.get('message'))
+                    return render(request, 'frontend/pages/payment_success.html', {
+                        'title': 'Thanh toán thành công',
+                        'payment_data': payment_data,
+                        'order_id': payment_data.get('orderId'),
+                        'amount': payment_data.get('amount'),
+                        'message': 'Thanh toán thành công'
+                    })
+
+            except Exception as e:
+                print(f"Error processing order creation: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                return render(request, 'frontend/pages/payment_success.html', {
+                    'title': 'Thanh toán thành công',
+                    'payment_data': payment_data,
+                    'order_id': payment_data.get('orderId'),
+                    'amount': payment_data.get('amount'),
+                    'message': 'Thanh toán thành công'
+                })
+        else:
+            # Thanh toán thất bại
+            return render(request, 'frontend/pages/payment_failed.html', {
+                'title': 'Thanh toán thất bại',
+                'payment_data': payment_data,
+                'order_id': payment_data.get('orderId'),
+                'amount': payment_data.get('amount'),
+                'message': payment_data.get('message', 'Thanh toán thất bại')
+            })
+
+    except Exception as e:
+        print(f"Exception in payment_result_view: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return render(request, 'frontend/pages/payment_failed.html', {
+            'title': 'Lỗi thanh toán',
+            'error': f'Có lỗi xảy ra: {str(e)}'
+        })
 
 
 # ==================== ADMIN BACKEND VIEWS ====================

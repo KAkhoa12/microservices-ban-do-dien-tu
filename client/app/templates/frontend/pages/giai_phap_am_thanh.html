@@ -24,7 +24,7 @@
                     </div>
                     
                     <div class="mb-4">
-                        <img src="{{ giai_phap.image_url }}" class="img-fluid rounded" alt="{{ giai_phap.title }}" style="width: 100%; height: auto; object-fit: cover;">
+                        <img src="http://localhost:8000/{{ giai_phap.image_url }}" class="img-fluid rounded" alt="{{ giai_phap.title }}" style="width: 100%; height: auto; object-fit: cover;">
                     </div>
                     
                     <div class="card-text">
@@ -60,7 +60,7 @@
                             <a href="{% url 'giai_phap_detail' item.id %}" class="text-decoration-none">
                                 <div class="d-flex align-items-center">
                                     <div class="mr-3">
-                                        <img src="{{ item.image_url }}" class="rounded-circle" alt="{{ item.title }}" style="width: 60px; height: 60px; object-fit: cover;">
+                                        <img src="http://localhost:8000/{{ item.image_url }}" class="rounded-circle" alt="{{ item.title }}" style="width: 60px; height: 60px; object-fit: cover;">
                                     </div>
                                     <div>
                                         <h6 class="mb-0 text-dark">{{ item.title }}</h6>

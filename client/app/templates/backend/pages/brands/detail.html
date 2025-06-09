@@ -43,7 +43,7 @@
                             <input type="file" class="form-control" id="image" name="image">
                             {% if brand.image_url %}
                             <div class="mt-2">
-                                <img src="{% static brand.image_url %}" alt="{{ brand.name }}" 
+                                <img src="http://localhost:8000/{{ brand.image_url }}" alt="{{ brand.name }}"
                                     style="max-width: 200px; max-height: 200px; object-fit: contain;">
                             </div>
                             {% endif %}

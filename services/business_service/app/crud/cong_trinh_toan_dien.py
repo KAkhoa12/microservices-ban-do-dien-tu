@@ -116,7 +116,7 @@ def update_cong_trinh_image(cong_trinh_id: int, image, db: Session):
         file_path = imgs_dir / file_name
         with open(file_path, "wb") as f:
             f.write(image.file.read())
-        cong_trinh.image_url = f"static/imgs/cong_trinh/{file_name}"
+        cong_trinh.image_url = f"static/business/imgs/cong_trinh/{file_name}"
         db.commit()
         db.refresh(cong_trinh)
     return Response(

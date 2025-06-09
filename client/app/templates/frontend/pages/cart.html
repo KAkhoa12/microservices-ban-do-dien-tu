@@ -29,7 +29,7 @@
                     </div>
                     <div class="form-group">
                         <input class="input" type="text" name="phone" placeholder="số điện thoại"
-                            value="{{current_user.phone}}">
+                            value="{{current_user.phone_number}}">
                     </div>
                     <div class="form-group">
                         <input class="input" type="text" name="address" placeholder="Địa chỉ"
@@ -88,11 +88,10 @@
                     <form method="post" action="{% url 'create_payment' %}">
                         {% csrf_token %}
                         <div class="form-group">
-                            <input type="number" id="amount" name="amount" min="1000" step="1000"
-                                value="{{cart_total }}" required hidden>
+                            <input type="hidden" id="amount" name="amount" value="{{cart_total }}">
                         </div>
                         <div class="form-group">
-                            <input type="text" id="order_info" name="order_info" value="Thanh toán đơn hàng" required hidden>
+                            <input type="hidden" id="order_info" name="order_info" value="Thanh toán đơn hàng">
                         </div>
                         <button class="primary-btn order-submit" type="submit">Thanh toán qua MoMo</button>
                     </form>

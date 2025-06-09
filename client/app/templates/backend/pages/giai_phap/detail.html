@@ -48,7 +48,7 @@
                     <label for="image">Hình ảnh chính</label>
                     {% if giai_phap.image_url %}
                     <div class="mb-2">
-                        <img src="{{ giai_phap.image_url }}" alt="Hình ảnh hiện tại" style="max-width: 200px; max-height: 200px;">
+                        <img src="http://localhost:8000/{{ giai_phap.image_url }}" alt="Hình ảnh hiện tại" style="max-width: 200px; max-height: 200px;">
                     </div>
                     {% endif %}
                     <input type="file" class="form-control-file" id="image" name="image" accept="image/*">

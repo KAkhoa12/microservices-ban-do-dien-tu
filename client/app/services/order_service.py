@@ -52,6 +52,35 @@ def update_order(order_id: int, total_price: float = None, status: str = None):
     response = requests.put(url, json=data)
     return handle_response(response)
 
+def create_order_from_cart_data(user_id: int, cart_data: dict):
+    """Create order from cart data"""
+    url = f"{API_URL}/api/order/create-order-from-cart"
+
+    payload = {
+        "user_id": user_id,
+        "cart_data": cart_data,
+        "payment_id": 0  # Placeholder since we don't have payment_id in this context
+    }
+
+    try:
+        print(f"Calling order service with payload: {payload}")
+        response = requests.post(url, json=payload)
+        print(f"Order service response status: {response.status_code}")
+        print(f"Order service response text: {response.text}")
+
+        if response.status_code == 200:
+            return handle_response(response)
+        else:
+            return {
+                'status': 'error',
+                'message': f'Order service returned {response.status_code}: {response.text}'
+            }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Error calling order service: {str(e)}'
+        }
+
 def update_order_status(order_id: int, status: str):
     """Update order status"""
     url = f"{API_URL}{OrderRoutes.UPDATE_ORDER_STATUS.value}"

@@ -30,7 +30,7 @@
                             <label for="image">Hình ảnh <span class="text-danger">*</span></label>
                             {% if cong_trinh.image_url %}
                             <div class="mb-2">
-                                <img src="{{ cong_trinh.image_url }}" alt="Hình ảnh hiện tại" style="max-width: 200px;">
+                                <img src="http://localhost:8000/{{ cong_trinh.image_url }}" alt="Hình ảnh hiện tại" style="max-width: 200px;">
                             </div>
                             {% endif %}
                             <input type="file" class="form-control" id="image" name="image" accept="image/*">

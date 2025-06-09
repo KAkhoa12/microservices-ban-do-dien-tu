@@ -44,3 +44,23 @@ def clear_cart(user_id: int):
     url = f"{API_URL}{CartRoutes.CLEAR_CART.value}"
     response = requests.delete(url, params={"user_id": user_id})
     return handle_response(response)
+
+def get_cart_by_user_id(user_id: int):
+    """Get user's cart by user ID"""
+    return get_cart(user_id)
+
+def update_cart_status(cart_id: int, status: str):
+    """Update cart status"""
+    url = f"{API_URL}/api/cart/update-cart-status"
+    params = {
+        "cart_id": cart_id,
+        "status": status
+    }
+    try:
+        response = requests.put(url, params=params)
+        return handle_response(response)
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Error updating cart status: {str(e)}'
+        }

@@ -37,7 +37,7 @@ services:
 
       - name: user-static-files
         paths:
-          - /static/user
+          - /static
         strip_path: false
         methods:
           - GET
@@ -201,3 +201,12 @@ services:
         strip_path: false
         methods:
           - GET
+
+      - name: payment-result
+        paths:
+          - /payment/momo/result
+          - /payment/momo/result/
+        strip_path: false
+        methods:
+          - GET
+          - POST

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ..db.models import MomoPayment
-from ..schemas.payment import PaymentCreateRequest
+from db.models import MomoPayment
+from schemas.payment import PaymentCreateRequest
 
 
 def get_payment_by_order_id(db: Session, order_id: str) -> Optional[MomoPayment]:

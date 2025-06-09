@@ -44,7 +44,7 @@
                             <td>{{ giai_phap.id }}</td>
                             <td>
                                 {% if giai_phap.image_url %}
-                                <img src="{{ giai_phap.image_url }}" alt="{{ giai_phap.title }}" style="max-width: 100px;">
+                                <img src="http://localhost:8000/{{ giai_phap.image_url }}" alt="{{ giai_phap.title }}" style="max-width: 100px;">
                                 {% else %}
                                 <img src="{% static 'backend/assets/img/default-solution.jpg' %}" alt="{{ giai_phap.title }}" style="max-width: 100px;">
                                 {% endif %}

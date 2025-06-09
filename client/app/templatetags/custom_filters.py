@@ -28,3 +28,14 @@ def multiply(value, arg):
         return float(value) * float(arg)
     except (ValueError, TypeError):
         return 0
+
+@register.filter
+def add_dots(value):
+    """Add dots as thousand separators"""
+    try:
+        # Convert to int first to remove decimal places
+        num = int(float(value))
+        # Format with dots as thousand separators
+        return "{:,}".format(num).replace(',', '.')
+    except (ValueError, TypeError):
+        return value

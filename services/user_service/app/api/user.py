@@ -60,7 +60,7 @@ def update_user_info(
 
 @router.put("/update-avatar")
 def update_user_avatar(
-    user_id: int,
+    user_id: int = Form(...),
     image: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user_with_response)
@@ -68,7 +68,7 @@ def update_user_avatar(
     # Kiểm tra nếu current_user là Response (lỗi)
     if hasattr(current_user, 'status'):
         return current_user
-        
+
     return crud_user.update_user_avatar(current_user, user_id, image, db)
 
 @router.delete("/admin/delete-user")

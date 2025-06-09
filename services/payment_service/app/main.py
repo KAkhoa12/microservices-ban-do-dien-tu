@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from .api.v1 import payment
-from .db.database import engine, Base
+from api import payment
+from db.database import engine, Base
 
 # Create database tables
 Base.metadata.create_all(bind=engine)

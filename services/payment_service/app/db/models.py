@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, Decimal, DateTime, Text
+from sqlalchemy import Column, Integer, String, DateTime, Text, Numeric
 from sqlalchemy.sql import func
-from .database import Base
+from db.database import Base
 import uuid
 
 
@@ -9,7 +9,7 @@ class MomoPayment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(String(50), unique=True, index=True, nullable=False)
-    amount = Column(Decimal(10, 0), nullable=False)
+    amount = Column(Numeric(10, 0), nullable=False)
     order_info = Column(String(255), nullable=False)
     request_id = Column(String(50), unique=True, index=True, nullable=False)
     transaction_id = Column(String(50), nullable=True)

@@ -131,7 +131,7 @@ def update_user_avatar(current_user, user_id, image, db: Session):
             f.write(image.file.read())
 
         # Store relative path in database (accessible via Kong gateway)
-        user.image = f"static/imgs/avatars/{file_name}"
+        user.image = f"static/user/imgs/avatars/{file_name}"
         db.commit()
         db.refresh(user)
     return Response(status=StatusEnum.SUCCESS, code=CodeEnum.SUCCESS, message="User updated successfully", data=user)

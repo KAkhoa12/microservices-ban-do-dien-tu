@@ -1,0 +1,120 @@
+{% extends 'frontend/components/layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %} 
+    {{ title }}
+{% endblock %}
+
+{% block content %}
+<!-- SECTION -->
+<div class="section">
+    <!-- container -->
+    <div class="container">
+        <!-- row -->
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2">
+                <div class="payment-result success">
+                    <div class="text-center">
+                        <i class="fa fa-check-circle" style="font-size: 80px; color: #28a745; margin-bottom: 20px;"></i>
+                        <h2 style="color: #28a745; margin-bottom: 20px;">Thanh toán thành công!</h2>
+                        <p style="font-size: 18px; margin-bottom: 30px;">{{ message }}</p>
+                    </div>
+                    
+                    <div class="payment-details">
+                        <h4>Thông tin thanh toán:</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <strong>Mã đơn hàng:</strong>
+                                    <span>{{ order_id }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <strong>Số tiền:</strong>
+                                    <span>{{ amount|floatformat:0|add_dots }} VND</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if payment_data.transId %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <strong>Mã giao dịch:</strong>
+                                    <span>{{ payment_data.transId }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <strong>Thời gian:</strong>
+                                    <span>{{ payment_data.responseTime }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-center" style="margin-top: 30px;">
+                        <a href="{% url 'orders' %}" class="primary-btn">Xem đơn hàng</a>
+                        <a href="{% url 'home' %}" class="primary-btn" style="margin-left: 10px;">Tiếp tục mua sắm</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /row -->
+    </div>
+    <!-- /container -->
+</div>
+<!-- /SECTION -->
+
+<style>
+.payment-result {
+    background: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    margin: 40px 0;
+}
+
+.payment-result.success {
+    border-top: 5px solid #28a745;
+}
+
+.detail-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.detail-item strong {
+    display: block;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.detail-item span {
+    color: #666;
+    font-size: 16px;
+}
+
+.primary-btn {
+    background: #D10024;
+    color: #fff;
+    padding: 12px 25px;
+    text-decoration: none;
+    border-radius: 5px;
+    display: inline-block;
+    margin: 5px;
+    transition: background 0.3s;
+}
+
+.primary-btn:hover {
+    background: #b8001f;
+    color: #fff;
+    text-decoration: none;
+}
+</style>
+{% endblock %}

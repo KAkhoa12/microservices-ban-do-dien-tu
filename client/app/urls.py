@@ -43,6 +43,7 @@ urlpatterns = [
 
     # Payment routes
     path('payment/create/', views.create_payment_view, name='create_payment'),
+    path('payment/momo/result/', views.payment_result_view, name='payment_result'),
     
     # Back end url
     path('dashboard/login/', views.dashboard_login, name='dashboard_login'),
