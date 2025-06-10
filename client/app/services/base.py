@@ -1,9 +1,9 @@
 import requests
 import json
 from ..response import Response
-
+import os
 # Base URL - Kong Gateway
-API_URL = "http://localhost:8000"  # URL của Kong Gateway
+API_URL = os.environ.get('API_URL', 'http://localhost:8000')  # URL của Kong Gateway
 
 def handle_response(response):
     """Handle API response and return Response object"""

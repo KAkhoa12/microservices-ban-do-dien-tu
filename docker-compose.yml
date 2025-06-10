@@ -16,15 +16,17 @@ services:
       - KONG_ADMIN_ERROR_LOG=/dev/stderr
       - KONG_ADMIN_LISTEN=0.0.0.0:8001
       - KONG_ADMIN_GUI_LISTEN=0.0.0.0:8002
+      - KONG_LOG_LEVEL=debug
     ports:
       - "8000:8000"     
       - "8001:8001"   
-      - "8002:8002"       # Kong Manager GUI port
+      - "8002:8002"
     depends_on:
       - user_service
       - business_service
       - payment_service
-      - client
+    networks:
+      - microservices_network
 
   # User Service
   user_service:
@@ -33,12 +35,14 @@ services:
       dockerfile: Dockerfile
     container_name: user_service
     ports:
-      - "8003:8000"     # Expose for direct access if needed
+      - "8003:8000"
     volumes:
-      - ${PWD}/services/user_service/app/static:/app/app/static # Volume for uploaded files
+      - ${PWD}/services/user_service/app/static:/app/app/static
     environment:
       - FLASK_ENV=production
       - PYTHONPATH=/app
+    networks:
+      - microservices_network
 
   business_service:
     build:
@@ -48,10 +52,12 @@ services:
     ports:
       - "8004:8000"
     volumes:
-      - ${PWD}/services/business_service/app/static:/app/app/static # Volume for uploaded files
+      - ${PWD}/services/business_service/app/static:/app/app/static
     environment:
       - FLASK_ENV=production
       - PYTHONPATH=/app
+    networks:
+      - microservices_network
 
   # Payment Service
   payment_service:
@@ -67,8 +73,10 @@ services:
       - BUSINESS_SERVICE_URL=http://business_service:8000
       - MOMO_RETURN_URL=http://localhost:8000/api/payment/momo/result
       - MOMO_NOTIFY_URL=http://localhost:8000/api/payment/momo/ipn
+    networks:
+      - microservices_network
 
-  # Django Client
+  # Django Client - CHẠY RIÊNG BIỆT, GỌI API QUA HOST
   client:
     build:
       context: ./client
@@ -77,16 +85,17 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DEBUG=1
-      - DJANGO_SETTINGS_MODULE=config.settings
+      - API_URL=http://host.docker.internal:8000
+      - DJANGO_DEBUG=True
+      - PYTHONUNBUFFERED=1  # Để xem logs real-time
     command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:3000"
-    depends_on:
-      - user_service
-      - business_service
-      - payment_service
-
+      sh -c "echo 'Starting Django server...' &&
+            python manage.py migrate &&
+            echo 'Migrations completed' &&
+            echo 'Starting server on 0.0.0.0:3000' &&
+            python manage.py runserver 0.0.0.0:3000 --verbosity=2"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 networks:
-  default:
-    name: microservices_network
+  microservices_network:
+    driver: bridge
