@@ -18,7 +18,7 @@ def get_cong_trinhs(page: int = 1, take: int = 10, search: str = None, author_id
 def get_cong_trinh_by_id(cong_trinh_id: int):
     """Get cong trinh by ID"""
     url = f"{API_URL}{CongTrinhRoutes.GET_CONG_TRINH_ID.value}"
-    response = requests.get(url, params={"id": cong_trinh_id})
+    response = requests.get(url, params={"cong_trinh_id": cong_trinh_id})
     return handle_response(response)
 
 def get_cong_trinh_by_slug(slug: str):

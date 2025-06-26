@@ -5,16 +5,11 @@ from ..services.base import handle_response
 
 
 def get_token_from_cookies(request: HttpRequest) -> str:
-    """
-    Lấy access_token từ cookies của request
-    
-    Args:
-        request: Django HttpRequest object
-        
-    Returns:
-        str: access_token hoặc None nếu không tìm thấy
-    """
-    return request.COOKIES.get('access_token')
+    if request.COOKIES.get('access_token'):
+        return request.COOKIES.get('access_token')
+    elif request.COOKIES.get('admin_access_token'):
+        return request.COOKIES.get('admin_access_token')    
+    return None
 
 
 def make_authenticated_request(request: HttpRequest, method: str, url: str, **kwargs) -> dict:
@@ -32,7 +27,7 @@ def make_authenticated_request(request: HttpRequest, method: str, url: str, **kw
     """
     token = get_token_from_cookies(request)
     
-    if not token:
+    if token == None:
         return {
             'status': 'error',
             'message': 'No access token found in cookies'
@@ -69,18 +64,9 @@ def make_authenticated_request(request: HttpRequest, method: str, url: str, **kw
 
 
 def is_user_authenticated(request: HttpRequest) -> bool:
-    """
-    Kiểm tra xem user có được authenticated không bằng cách gọi API /me
-
-    Args:
-        request: Django HttpRequest object
-
-    Returns:
-        bool: True nếu user authenticated, False nếu không
-    """
     token = get_token_from_cookies(request)
 
-    if not token:
+    if token == None:
         print("DEBUG: No token found in cookies")
         return False
 
@@ -101,7 +87,7 @@ def is_user_authenticated(request: HttpRequest) -> bool:
 def get_user_from_cookies(request: HttpRequest) -> dict:
     token = get_token_from_cookies(request)
 
-    if not token:
+    if token == None:
         return None
 
     try:
@@ -128,7 +114,7 @@ def get_user_role_from_cookies(request: HttpRequest) -> str:
 
     user_data = get_user_from_cookies(request)
     if user_data:
-        return user_data.get('role')
+        return user_data.get('user_role')
     return None
 
 

@@ -20,8 +20,10 @@ from .services.business_service import (
     update_category_image, delete_category, get_all_products, get_product_by_id,
     create_product, update_product_info, update_product_image, update_product_stock,
     delete_product, get_products_by_category, get_products_by_brand, search_products,
-    get_all_brands, get_brand_by_id, create_brand, update_brand_info, update_brand_avatar, delete_brand
+    get_all_brands, get_brand_by_id, create_brand, update_brand_info, update_brand_avatar, delete_brand,
 )
+from .services.cong_trinh_service import get_cong_trinhs, get_cong_trinh_by_id, get_cong_trinh_by_slug, create_cong_trinh, update_cong_trinh, delete_cong_trinh,update_cong_trinh_image
+from .services.giai_phap_service import get_giai_phaps, get_giai_phap_by_id, get_giai_phap_by_slug, create_giai_phap, update_giai_phap, delete_giai_phap, update_giai_phap_image
 from .services.cache_service import get_cached_categories, get_cached_brands, get_cached_products, get_cached_product_by_id
 from .services.payment_service import create_payment
 from .decorator import admin_required, login_required, admin_cookie_required
@@ -1317,9 +1319,10 @@ def admin_product_detail(request, id):
         # Get product details
         product_response = get_product_by_id(id)
         product = safe_get_payload(product_response)
-
-        if not product:
-            messages.error(request, 'Không tìm thấy sản phẩm')
+        print("Product detail:", product_response)
+        print("Product detail type:", product)
+        if len(product) == 0:
+            print('Không tìm thấy sản phẩm')
             return redirect('admin_products')
 
         if request.method == 'POST':
@@ -1357,12 +1360,12 @@ def admin_product_detail(request, id):
 
         return render(request, 'backend/pages/products/detail.html', {
             'title': 'Chi tiết sản phẩm',
-            'product': product,
+            'product': product[0],
             'categories': categories,
             'brands': brands
         })
     except Exception as e:
-        messages.error(request, f"Lỗi khi tải chi tiết sản phẩm: {str(e)}")
+        print( f"Lỗi khi tải chi tiết sản phẩm: {str(e)}")
         return redirect('admin_products')
 
 @admin_cookie_required
@@ -1463,9 +1466,10 @@ def admin_brand_detail(request, id):
         # Get brand details
         brand_response = get_brand_by_id(id)
         brand = safe_get_payload(brand_response)
-
-        if not brand:
-            messages.error(request, 'Không tìm thấy thương hiệu')
+        print("Brand detail:", brand_response)
+        print("Brand detail type:", brand)
+        if not brand_response:
+            print('Không tìm thấy thương hiệu')
             return redirect('admin_brands')
 
         if request.method == 'POST':
@@ -1492,10 +1496,10 @@ def admin_brand_detail(request, id):
 
         return render(request, 'backend/pages/brands/detail.html', {
             'title': 'Chi tiết thương hiệu',
-            'brand': brand
+            'brand': brand_response
         })
     except Exception as e:
-        messages.error(request, f"Lỗi khi tải chi tiết thương hiệu: {str(e)}")
+        print(f"Lỗi khi tải chi tiết thương hiệu: {str(e)}")
         return redirect('admin_brands')
 
 @admin_cookie_required
@@ -1583,9 +1587,10 @@ def admin_category_detail(request, id):
         # Get category details
         category_response = get_category_by_id(id)
         category = safe_get_payload(category_response)
-
-        if not category:
-            messages.error(request, 'Không tìm thấy danh mục')
+        print("Category detail:", category_response)
+        print("Category detail type:", category)
+        if not category_response:
+            print('Không tìm thấy danh mục')
             return redirect('admin_categories')
 
         if request.method == 'POST':
@@ -1612,10 +1617,10 @@ def admin_category_detail(request, id):
 
         return render(request, 'backend/pages/categories/detail.html', {
             'title': 'Chi tiết danh mục',
-            'category': category
+            'category': category_response
         })
     except Exception as e:
-        messages.error(request, f"Lỗi khi tải chi tiết danh mục: {str(e)}")
+        print( f"Lỗi khi tải chi tiết danh mục: {str(e)}")
         return redirect('admin_categories')
 
 @admin_cookie_required
@@ -1798,16 +1803,14 @@ def admin_user_delete(request, user_id):
         messages.error(request, f"Lỗi khi xóa người dùng: {str(e)}")
         return redirect('admin_users')
 
-# Công trình toàn diện
-@admin_required
+@admin_cookie_required
 def admin_cong_trinh(request):
-    cong_trinhs = CongTrinhToanDien.objects.all()
+    cong_trinhs = safe_get_payload(get_cong_trinhs())
     return render(request, 'backend/pages/cong_trinh/list.html', {'cong_trinhs': cong_trinhs})
 
-@admin_required
+@admin_cookie_required
 def admin_cong_trinh_detail(request, id):
-    cong_trinh = get_object_or_404(CongTrinhToanDien, id=id)
-    
+    cong_trinh = safe_get_data(get_cong_trinh_by_id(id))
     if request.method == 'POST':
         try:
             title = request.POST.get('title')
@@ -1819,18 +1822,10 @@ def admin_cong_trinh_detail(request, id):
             if not title or not description or not content:
                 messages.error(request, 'Vui lòng điền đầy đủ thông tin bắt buộc')
                 return render(request, 'backend/pages/cong_trinh/detail.html', {'cong_trinh': cong_trinh})
-            
-            # Cập nhật thông tin
-            cong_trinh.title = title
-            cong_trinh.description = description
-            cong_trinh.content = content
-            
+            new_cong_trinh = create_cong_trinh(id, title=title, description=description, content=content, status=status)
             # Xử lý upload ảnh mới nếu có
             if 'image' in request.FILES and request.FILES['image']:
-                cong_trinh.image_url = upload_file.upload_file(request.FILES['image'], 'cong_trinh')
-            cong_trinh.status = status
-            # Lưu thay đổi
-            cong_trinh.save()
+                update_cong_trinh_image(id, request.FILES['image'])
             messages.success(request, 'Cập nhật công trình thành công')
             return redirect('admin_cong_trinh')
         except Exception as e:
@@ -1839,7 +1834,7 @@ def admin_cong_trinh_detail(request, id):
     
     return render(request, 'backend/pages/cong_trinh/detail.html', {'cong_trinh': cong_trinh})
 
-@admin_required
+@admin_cookie_required
 def admin_cong_trinh_add(request):
     if request.method == 'POST':
         try:
@@ -1853,23 +1848,22 @@ def admin_cong_trinh_add(request):
                 return render(request, 'backend/pages/cong_trinh/add.html')
             
             # Tạo công trình mới
-            cong_trinh = CongTrinhToanDien(
+            new_cong_trinh = create_cong_trinh(
                 title=title,
                 description=description,
                 content=content,
                 author_id=request.session['user_id'],
                 status='active'
             )
+            cong_trinh_id = new_cong_trinh.get('data').get('id')
             
             # Xử lý upload ảnh
-            if 'image' in request.FILES:
-                cong_trinh.image_url = upload_file.upload_file(request.FILES['image'], 'cong_trinh')
+            if 'image' in request.FILES and request.FILES['image']:
+                update_cong_trinh_image(cong_trinh_id, request.FILES['image'])
             else:
                 messages.error(request, 'Vui lòng chọn hình ảnh cho công trình')
                 return render(request, 'backend/pages/cong_trinh/add.html')
             
-            # Lưu công trình
-            cong_trinh.save()
             messages.success(request, 'Thêm công trình thành công')
             return redirect('admin_cong_trinh')
         except Exception as e:
@@ -1878,38 +1872,26 @@ def admin_cong_trinh_add(request):
     
     return render(request, 'backend/pages/cong_trinh/add.html')
 
-@admin_required
+@admin_cookie_required
 def admin_cong_trinh_delete(request, id):
     try:
-        cong_trinh = CongTrinhToanDien.objects.get(id=id)
-        # Xóa file ảnh nếu có
-        if cong_trinh.image_url:
-            try:
-                image_path = os.path.join(settings.MEDIA_ROOT, str(cong_trinh.image_url))
-                if os.path.exists(image_path):
-                    os.remove(image_path)
-            except Exception as e:
-                print(f"Lỗi khi xóa file ảnh: {str(e)}")
-        
-        cong_trinh.delete()
+        delete_cong_trinh(id)
         messages.success(request, 'Đã xóa công trình thành công!')
-    except CongTrinhToanDien.DoesNotExist:
-        messages.error(request, 'Không tìm thấy công trình cần xóa!')
     except Exception as e:
         messages.error(request, f'Có lỗi xảy ra khi xóa công trình: {str(e)}')
     
     return redirect('admin_cong_trinh')
 
 # Giải pháp âm thanh
-@admin_required
+@admin_cookie_required
 def admin_giai_phap(request):
-    giai_phaps = GiaiPhapAmThanh.objects.all()
+    giai_phaps = safe_get_payload(get_giai_phaps())
     return render(request, 'backend/pages/giai_phap/list.html', {'giai_phaps': giai_phaps})
 
-@admin_required
+@admin_cookie_required
 def admin_giai_phap_detail(request, id):
-    giai_phap = get_object_or_404(GiaiPhapAmThanh, id=id)
-    
+    giai_phap = safe_get_data(get_giai_phap_by_id(id))
+    messages = []
     if request.method == 'POST':
         try:
             title = request.POST.get('title')
@@ -1919,30 +1901,20 @@ def admin_giai_phap_detail(request, id):
             
             # Kiểm tra dữ liệu bắt buộc
             if not title or not description or not content:
-                messages.error(request, 'Vui lòng điền đầy đủ thông tin bắt buộc')
-                return render(request, 'backend/pages/giai_phap/detail.html', {'giai_phap': giai_phap})
+                messages.append( 'Vui lòng điền đầy đủ thông tin bắt buộc')
+                return render(request, 'backend/pages/giai_phap/detail.html', {'giai_phap': giai_phap, 'messages': messages})
             
-            # Cập nhật thông tin
-            giai_phap.title = title
-            giai_phap.description = description
-            giai_phap.content = content
-            giai_phap.youtube_url = youtube_url
-            
-            # Xử lý upload ảnh mới nếu có
-            if 'image' in request.FILES and request.FILES['image']:
-                giai_phap.image_url = upload_file.upload_file(request.FILES['image'], 'giai_phap')
-            
-            # Lưu thay đổi
-            giai_phap.save()
-            messages.success(request, 'Cập nhật giải pháp thành công')
+            update_giai_phap(id, title=title, description=description, content=content, youtube_url=youtube_url)
+            update_giai_phap_image(id, request.FILES['image'])
+            messages.append('Cập nhật giải pháp thành công')
             return redirect('admin_giai_phap')
         except Exception as e:
-            messages.error(request, f'Có lỗi xảy ra: {str(e)}')
-            return render(request, 'backend/pages/giai_phap/detail.html', {'giai_phap': giai_phap})
+            messages.append(request, f'Có lỗi xảy ra: {str(e)}')
+            return render(request, 'backend/pages/giai_phap/detail.html', {'giai_phap': giai_phap, 'messages': messages})
     
     return render(request, 'backend/pages/giai_phap/detail.html', {'giai_phap': giai_phap})
 
-@admin_required
+@admin_cookie_required
 def admin_giai_phap_add(request):
     if request.method == 'POST':
         try:
@@ -1957,24 +1929,21 @@ def admin_giai_phap_add(request):
                 return render(request, 'backend/pages/giai_phap/add.html')
             
             # Tạo giải pháp mới
-            giai_phap = GiaiPhapAmThanh(
+            new_giai_phap = create_giai_phap(
                 title=title,
                 description=description,
                 content=content,
-                youtube_url=youtube_url,
                 author_id=request.session['user_id'],
                 status='active'
             )
-            
+            giai_phap_id = new_giai_phap.get('data').get('id')
             # Xử lý upload ảnh
-            if 'image' in request.FILES:
-                giai_phap.image_url = upload_file.upload_file(request.FILES['image'], 'giai_phap')
+            if 'image' in request.FILES and request.FILES['image']:
+                update_giai_phap_image(giai_phap_id, request.FILES['image'])
             else:
                 messages.error(request, 'Vui lòng chọn hình ảnh cho giải pháp')
                 return render(request, 'backend/pages/giai_phap/add.html')
             
-            # Lưu giải pháp
-            giai_phap.save()
             messages.success(request, 'Thêm giải pháp thành công')
             return redirect('admin_giai_phap')
         except Exception as e:
@@ -1983,29 +1952,18 @@ def admin_giai_phap_add(request):
     
     return render(request, 'backend/pages/giai_phap/add.html')
 
-@admin_required
+@admin_cookie_required
 def admin_giai_phap_delete(request, giai_phap_id):
     try:
-        giai_phap = GiaiPhapAmThanh.objects.get(id=giai_phap_id)
-        # Xóa file ảnh nếu có
-        if giai_phap.image_url:
-            try:
-                image_path = os.path.join(settings.MEDIA_ROOT, str(giai_phap.image_url))
-                if os.path.exists(image_path):
-                    os.remove(image_path)
-            except Exception as e:
-                print(f"Lỗi khi xóa file ảnh: {str(e)}")
         
-        giai_phap.delete()
+        delete_giai_phap(giai_phap_id)
         messages.success(request, 'Đã xóa giải pháp thành công!')
-    except GiaiPhapAmThanh.DoesNotExist:
-        messages.error(request, 'Không tìm thấy giải pháp cần xóa!')
     except Exception as e:
         messages.error(request, f'Có lỗi xảy ra khi xóa giải pháp: {str(e)}')
     
     return redirect('admin_giai_phap')
 
-@admin_required
+@admin_cookie_required
 def dashboard_logout(request):
     request.session.flush()
     return redirect('dashboard_login')
@@ -2035,9 +1993,8 @@ def admin_order_detail(request, id):
     try:
         # Get order details
         order_response = get_order(id)
-        order = safe_get_payload(order_response)
 
-        if not order:
+        if not order_response:
             messages.error(request, 'Không tìm thấy đơn hàng')
             return redirect('admin_orders')
 
@@ -2054,8 +2011,8 @@ def admin_order_detail(request, id):
 
         return render(request, 'backend/pages/orders/detail.html', {
             'title': 'Chi tiết đơn hàng',
-            'order': order,
-            'order_details': order.get('order_details', [])
+            'order': order_response.get('data', {}),
+            'order_details': order_response.get('data', {}).get('order_details', [])
         })
     except Exception as e:
         messages.error(request, f"Lỗi khi tải chi tiết đơn hàng: {str(e)}")
@@ -2083,134 +2040,11 @@ def admin_order_delete(request, id):
 
         return render(request, 'backend/pages/orders/delete.html', {
             'title': 'Xóa đơn hàng',
-            'order': order
+            'order': order_response.get('data', {})
         })
     except Exception as e:
         messages.error(request, f"Lỗi khi xóa đơn hàng: {str(e)}")
         return redirect('admin_orders')
-
-@csrf_exempt
-def chatbot_api(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            user_message = data.get('message', '')
-            
-            # Gọi hàm xử lý tin nhắn của chatbot
-            response = process_message(user_message)
-            
-            # Nếu response có type là "list", lấy thông tin sản phẩm từ sources
-            if response.get('type') == 'list':
-                product_ids = [source['id'] for source in response.get('sources', [])]
-                products = Product.objects.filter(id__in=product_ids)
-                
-                products_data = []
-                for product in products:
-                    products_data.append({
-                        'id': product.id,
-                        'name': product.name,
-                        'price': str(product.price),
-                        'image_url': product.image_url,
-                        'description': product.description,
-                        'brand': product.brand.name if product.brand else None,
-                        'category': product.category.name if product.category else None,
-                        'url': f'/product/{product.id}'
-                    })
-                
-                return JsonResponse({
-                    'status': 'success',
-                    'response': {
-                        'answer': response.get('answer', ''),
-                        'sources': products_data
-                    }
-                })
-            
-            # Trả về response thông thường nếu không phải type list
-            return JsonResponse({
-                'status': 'success',
-                'response': response
-            })
-            
-        except Exception as e:
-            return JsonResponse({
-                'status': 'error', 
-                'message': str(e)
-            })
-            
-    return JsonResponse({
-        'status': 'error',
-        'message': 'Chỉ hỗ trợ phương thức POST'
-    })
-
-def handle_general_questions(question):
-    """Xử lý các câu hỏi chào hỏi và câu hỏi thông thường"""
-    question_lower = question.lower().strip()
-    
-    # Xử lý các câu chào
-    greetings = ["hi", "hello", "chào", "xin chào", "hey", "hi there", "chào bạn"]
-    if any(greeting == question_lower for greeting in greetings):
-        return "Xin chào! Tôi là trợ lý ảo về thiết bị âm thanh, tôi có thể giúp bạn tìm kiếm thông tin về sản phẩm, giá cả, thương hiệu. Bạn cần hỏi gì về thiết bị âm thanh?"
-    
-    # Xử lý câu hỏi về tên
-    name_questions = ["tên bạn là gì", "bạn tên gì", "tên của bạn là gì", "bạn là ai", "what is your name", "who are you"]
-    if any(name_question in question_lower for name_question in name_questions):
-        return "Tôi là trợ lý AI chuyên về thiết bị âm thanh của DoAn_QuanLyDoDienTu. Tôi có thể giúp bạn tìm kiếm thông tin về các sản phẩm âm thanh, giá cả, và thương hiệu. Bạn cần hỏi gì về thiết bị âm thanh?"
-    
-    # Xử lý cảm ơn
-    thanks = ["cảm ơn", "thank", "thanks", "cám ơn"]
-    if any(thank_word in question_lower for thank_word in thanks):
-        return "Không có gì! Rất vui khi được giúp đỡ bạn. Bạn có câu hỏi nào khác về thiết bị âm thanh không?"
-    
-    # Xử lý tạm biệt
-    goodbyes = ["tạm biệt", "bye", "goodbye", "gặp lại sau"]
-    if any(goodbye in question_lower for goodbye in goodbyes):
-        return "Tạm biệt! Rất vui được giúp đỡ bạn. Hẹn gặp lại bạn lần sau!"
-    
-    # Xử lý câu hỏi về khả năng của chatbot
-    capabilities = ["bạn có thể làm gì", "bạn giúp được gì", "chức năng của bạn", "bạn biết gì"]
-    if any(capability in question_lower for capability in capabilities):
-        return "Tôi có thể giúp bạn tìm kiếm thông tin về các sản phẩm âm thanh như loa, amply, tai nghe... Tôi cũng có thể cung cấp thông tin về giá cả, thương hiệu, tính năng và so sánh các sản phẩm. Bạn có thể hỏi tôi về bất kỳ sản phẩm âm thanh nào!"
-    
-    # Nếu không thuộc các trường hợp trên, trả về None để xử lý như câu hỏi về sản phẩm
-    return None
-
-def handle_combined_query(question):
-    """Xử lý truy vấn kết hợp giữa hãng và các tiêu chí khác"""
-    question_lower = question.lower()
-    
-    # Kiểm tra xem có đề cập đến hãng nào không
-    brands = ["JBL", "Sony", "Denon", "Yamaha", "Bose", "Sennheiser", "Audio-Technica", 
-              "KEF", "Klipsch", "Polk Audio", "Cambridge Audio", "Boston Acoustics", 
-              "Harman Kardon", "Marshall", "Bang & Olufsen", "Focal", "Dynaudio"]
-    
-    found_brand = None
-    for brand in brands:
-        if brand.lower() in question_lower:
-            found_brand = brand
-            break
-    
-    # Nếu không tìm thấy thương hiệu, trả về None
-    if not found_brand:
-        return None
-    
-    # Kiểm tra các tiêu chí khác
-    is_top_selling = any(term in question_lower for term in ["bán chạy", "mua nhiều", "bán nhiều"])
-    is_most_liked = any(term in question_lower for term in ["yêu thích", "ưa chuộng", "nhiều like", "được yêu thích"])
-    is_highest_price = any(term in question_lower for term in ["đắt nhất", "cao nhất", "giá cao"])
-    is_lowest_price = any(term in question_lower for term in ["rẻ nhất", "thấp nhất", "giá thấp"])
-    
-    # Tạo truy vấn kết hợp
-    if is_top_selling:
-        return f"Tên hãng: {found_brand} sản phẩm có số lượng mua nhiều nhất"
-    elif is_most_liked:
-        return f"Tên hãng: {found_brand} sản phẩm có số lượng like nhiều nhất"
-    elif is_highest_price:
-        return f"Tên hãng: {found_brand} sản phẩm có giá cao nhất"
-    elif is_lowest_price:
-        return f"Tên hãng: {found_brand} sản phẩm có giá thấp nhất"
-    
-    # Nếu chỉ có thương hiệu mà không có tiêu chí cụ thể
-    return f"Tên hãng: {found_brand}"
 
 @csrf_exempt
 def get_products_by_ids(request):
@@ -2297,34 +2131,6 @@ def increase_cart_item(request, id):
     
     return redirect(request.META.get('HTTP_REFERER', 'cart'))
 
-def decrease_cart_item(request, id):
-    """
-    Giảm số lượng sản phẩm trong giỏ hàng, nếu số lượng = 0 thì xóa sản phẩm
-    """
-    if 'user_id' not in request.session:
-        return redirect('login')
-    
-    user_id = request.session['user_id']
-    cart = get_or_create_active_cart(user_id)
-    
-    # Tìm cart detail
-    cart_detail = CartDetail.objects.filter(cart_id=cart.id, product_id=id).first()
-    
-    if cart_detail:
-        # Giảm số lượng
-        if cart_detail.quantity > 1:
-            cart_detail.quantity -= 1
-            cart_detail.save()
-        else:
-            # Xóa sản phẩm khỏi giỏ hàng nếu số lượng = 1
-            cart_detail.delete()
-        
-        # Cập nhật session
-        update_cart_session(request, user_id, cart.id)
-    else:
-        messages.error(request, "Sản phẩm không có trong giỏ hàng")
-    
-    return redirect(request.META.get('HTTP_REFERER', 'cart'))
 
 @csrf_exempt
 def get_chat_history(request):

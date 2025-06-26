@@ -18,7 +18,7 @@ def get_giai_phaps(page: int = 1, take: int = 10, search: str = None, author_id:
 def get_giai_phap_by_id(giai_phap_id: int):
     """Get giai phap by ID"""
     url = f"{API_URL}{GiaiPhapRoutes.GET_GIAI_PHAP_ID.value}"
-    response = requests.get(url, params={"id": giai_phap_id})
+    response = requests.get(url, params={"giai_phap_id": giai_phap_id})
     return handle_response(response)
 
 def get_giai_phap_by_slug(slug: str):
@@ -42,7 +42,15 @@ def create_giai_phap(title: str, description: str, content: str, author_id: int,
     response = requests.post(url, json=data)
     return handle_response(response)
 
-def update_giai_phap(giai_phap_id: int, title: str = None, description: str = None, content: str = None, status: str = None, slug: str = None):
+def update_giai_phap(
+    giai_phap_id: int,
+    title: str = None,
+    description: str = None, 
+    content: str = None,
+    status: str = None, 
+    slug: str = None,
+    youtube_url: str = None
+    ):
     """Update giai phap"""
     url = f"{API_URL}{GiaiPhapRoutes.UPDATE_GIAI_PHAP.value}"
     data = {"id": giai_phap_id}
@@ -56,6 +64,8 @@ def update_giai_phap(giai_phap_id: int, title: str = None, description: str = No
         data["status"] = status
     if slug is not None:
         data["slug"] = slug
+    if youtube_url is not None:
+        data["youtube_url"] = youtube_url
     response = requests.put(url, json=data)
     return handle_response(response)
 

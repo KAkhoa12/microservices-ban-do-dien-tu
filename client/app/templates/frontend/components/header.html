@@ -181,7 +181,7 @@
                                         {% for item in current_user.cart_details|default_if_none:'' %}
                                         <div class="product-widget">
                                             <div class="product-img">
-                                                <img src="{% static item.product_image %}" alt="">
+                                                <img src="http://localhost:8000/{% static item.product_image %}" alt="">
                                             </div>
                                             <div class="product-body">
                                                 <h3 class="product-name"><a href="{% url 'product_detail' item.product_id %}">{{ item.product_name }}</a></h3>
